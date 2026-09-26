@@ -33,11 +33,20 @@
                 type="file"
                 accept="application/pdf">
         </label>
+
+        <div id="savedSection" class="hidden">
+            <h2>Saved PDFs</h2>
+            <div id="savedPdfList"></div>
+        </div>
     </div>
 
     <div id="reader" class="hidden">
 
         <div id="topBar">
+
+            <button id="libraryButton">
+                Library
+            </button>
 
             <button id="openAnother">
                 Open PDF

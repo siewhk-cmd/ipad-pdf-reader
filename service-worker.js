@@ -1,5 +1,5 @@
 const CACHE_NAME =
-    "pdf-reader-v1";
+    "pdf-reader-v2";
 
 const APP_FILES = [
     "./",
@@ -11,13 +11,11 @@ const APP_FILES = [
     "./pdfjs/pdf.worker.mjs"
 ];
 
-
 self.addEventListener(
     "install",
     event => {
 
         event.waitUntil(
-
             caches
                 .open(CACHE_NAME)
                 .then(
@@ -32,19 +30,16 @@ self.addEventListener(
     }
 );
 
-
 self.addEventListener(
     "activate",
     event => {
 
         event.waitUntil(
-
             caches
                 .keys()
                 .then(
                     names =>
                         Promise.all(
-
                             names
                                 .filter(
                                     name =>
@@ -65,7 +60,6 @@ self.addEventListener(
     }
 );
 
-
 self.addEventListener(
     "fetch",
     event => {
@@ -77,7 +71,6 @@ self.addEventListener(
         }
 
         event.respondWith(
-
             caches
                 .match(
                     event.request
