@@ -39,9 +39,6 @@ let currentFileName = "";
 let rendering = false;
 let pendingPage = null;
 
-
-// OPEN PDF
-
 pdfFileInput.addEventListener(
     "change",
     openSelectedPDF
@@ -130,9 +127,6 @@ async function openSelectedPDF(event) {
         );
     }
 }
-
-
-// RENDER PAGE
 
 async function renderPage(pageNumber) {
 
@@ -253,9 +247,6 @@ async function renderPage(pageNumber) {
     }
 }
 
-
-// PAGE NAVIGATION
-
 function nextPage() {
 
     if (!pdfDocument) {
@@ -290,7 +281,9 @@ function previousPage() {
 }
 
 
-// TWO-FINGER SWIPE
+/* =========================================================
+   TWO-FINGER SWIPE
+========================================================= */
 
 let gestureActive = false;
 
@@ -321,7 +314,6 @@ function centreOfTwoFingers(touches) {
     };
 }
 
-
 pdfArea.addEventListener(
     "touchstart",
 
@@ -337,6 +329,8 @@ pdfArea.addEventListener(
         }
 
         gestureActive = true;
+
+        singleTapActive = false;
 
         const point =
             centreOfTwoFingers(
@@ -356,7 +350,6 @@ pdfArea.addEventListener(
         passive: false
     }
 );
-
 
 pdfArea.addEventListener(
     "touchmove",
@@ -391,7 +384,6 @@ pdfArea.addEventListener(
         passive: false
     }
 );
-
 
 pdfArea.addEventListener(
     "touchend",
@@ -448,18 +440,220 @@ pdfArea.addEventListener(
     }
 );
 
-
 pdfArea.addEventListener(
     "touchcancel",
-
     () => {
 
         gestureActive = false;
+        singleTapActive = false;
     }
 );
 
 
-// SCREEN ROTATION / RESIZE
+/* =========================================================
+   SINGLE-TAP LEFT / RIGHT 30%
+========================================================= */
+
+let singleTapActive = false;
+
+let tapStartX = 0;
+let tapStartY = 0;
+let tapStartTime = 0;
+
+const TAP_MAX_MOVEMENT = 15;
+const TAP_MAX_DURATION = 400;
+
+pdfArea.addEventListener(
+    "touchstart",
+
+    event => {
+
+        if (
+            event.touches.length !== 1
+        ) {
+            singleTapActive = false;
+            return;
+        }
+
+        if (gestureActive) {
+            singleTapActive = false;
+            return;
+        }
+
+        const touch =
+            event.touches[0];
+
+        tapStartX =
+            touch.clientX;
+
+        tapStartY =
+            touch.clientY;
+
+        tapStartTime =
+            Date.now();
+
+        singleTapActive = true;
+    },
+
+    {
+        passive: true
+    }
+);
+
+pdfArea.addEventListener(
+    "touchmove",
+
+    event => {
+
+        if (!singleTapActive) {
+            return;
+        }
+
+        if (
+            event.touches.length !== 1
+        ) {
+            singleTapActive = false;
+            return;
+        }
+
+        const touch =
+            event.touches[0];
+
+        const moveX =
+            Math.abs(
+                touch.clientX -
+                tapStartX
+            );
+
+        const moveY =
+            Math.abs(
+                touch.clientY -
+                tapStartY
+            );
+
+        if (
+            moveX > TAP_MAX_MOVEMENT ||
+            moveY > TAP_MAX_MOVEMENT
+        ) {
+            singleTapActive = false;
+        }
+    },
+
+    {
+        passive: true
+    }
+);
+
+pdfArea.addEventListener(
+    "touchend",
+
+    event => {
+
+        if (!singleTapActive) {
+            return;
+        }
+
+        if (gestureActive) {
+            singleTapActive = false;
+            return;
+        }
+
+        const duration =
+            Date.now() -
+            tapStartTime;
+
+        if (
+            duration >
+            TAP_MAX_DURATION
+        ) {
+            singleTapActive = false;
+            return;
+        }
+
+        const screenWidth =
+            pdfArea.clientWidth;
+
+        const leftBoundary =
+            screenWidth * 0.30;
+
+        const rightBoundary =
+            screenWidth * 0.70;
+
+        const rect =
+            pdfArea.getBoundingClientRect();
+
+        const relativeX =
+            tapStartX -
+            rect.left;
+
+        if (
+            relativeX <=
+            leftBoundary
+        ) {
+
+            previousPage();
+
+        } else if (
+            relativeX >=
+            rightBoundary
+        ) {
+
+            nextPage();
+        }
+
+        singleTapActive = false;
+    },
+
+    {
+        passive: true
+    }
+);
+
+
+/* =========================================================
+   MOUSE / TRACKPAD CLICK SUPPORT
+========================================================= */
+
+pdfArea.addEventListener(
+    "click",
+
+    event => {
+
+        if (!pdfDocument) {
+            return;
+        }
+
+        const rect =
+            pdfArea.getBoundingClientRect();
+
+        const relativeX =
+            event.clientX -
+            rect.left;
+
+        const width =
+            rect.width;
+
+        if (
+            relativeX <=
+            width * 0.30
+        ) {
+
+            previousPage();
+
+        } else if (
+            relativeX >=
+            width * 0.70
+        ) {
+
+            nextPage();
+        }
+    }
+);
+
+
+/* =========================================================
+   SCREEN ROTATION / RESIZE
+========================================================= */
 
 let resizeTimer = null;
 
@@ -492,7 +686,9 @@ window.addEventListener(
 );
 
 
-// SERVICE WORKER
+/* =========================================================
+   SERVICE WORKER
+========================================================= */
 
 if ("serviceWorker" in navigator) {
 
@@ -508,6 +704,7 @@ if ("serviceWorker" in navigator) {
                 )
                 .catch(
                     error => {
+
                         console.error(
                             "Service worker:",
                             error
